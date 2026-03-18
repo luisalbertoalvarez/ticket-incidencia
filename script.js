@@ -1731,17 +1731,15 @@ function copiarResumen2() {
     const btn = document.querySelector('.btn-resumen-2');
     const originalHTML = btn.innerHTML;
     const originalClasses = btn.className;
+    
     const ticketIdEl = document.getElementById('ticketId');
     const tramoEl = document.getElementById('tramo');
     const redAfectadaEl = document.getElementById('redAfectada');
-    const onnetEl = document.getElementById('onnet');
     const offnetEl = document.getElementById('offnet');
     const paisEl = document.getElementById('pais');
     const ticketSecundariosEl = document.getElementById('ticketSecundarios');
-    const impactoEl = document.getElementById('impacto');
     const diagnosticoEl = document.getElementById('diagnostico');
-    const accionesAdicionalesEl = document.getElementById('accionesAdicionales');
-
+    
     if (!ticketIdEl.value.trim()) {
         mostrarToast('⚠️ Debe ingresar el ID del ticket', 'warning');
         ticketIdEl.focus();
@@ -1758,63 +1756,16 @@ function copiarResumen2() {
     // ACTUALIZAR PLANTILLA PRIMERO PARA OBTENER TIEMPOS ACTUALES
     actualizarPlantilla();
 
-    // Obtener estado
-    let estadoTexto = 'En Progreso';
-    if (ticketResuelto) estadoTexto = 'Resuelto';
-    else if (ticketSuspendido) estadoTexto = 'Suspendido';
-
-    // Fechas formateadas
-    const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', {
-        timeZone: 'America/Guayaquil',
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-
     // TIEMPOS SLA ACTUALIZADOS
     const ahora = ticketResuelto ? fechaResolucion : new Date();
-    const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
+    const { totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
 
-    // ANALIZAR TICKETS SECUNDARIOS (VERSIÓN SIMPLIFICADA)
+    // ANALIZAR TICKETS SECUNDARIOS
     const ticketsSecundariosTexto = ticketSecundariosEl.value.trim();
     let analisisTickets = analizarTicketsSecundarios(ticketsSecundariosTexto);
 
     // OBTENER ÚLTIMO AVANCE (SOLO TEXTO, SIN FECHA)
     const ultimoAvanceTexto = obtenerUltimoAvanceTexto();
-
-    // Construir resumen
-    let resumen = `Ticket: ${ticketIdEl.value}`;
-    resumen += `\nEstado: ${estadoTexto}`;
-    resumen += `\nTramo: ${tramoEl.value || 'No especificado'}`;
-    resumen += `\nRed afectada: ${redAfectadaEl.value || 'No especificada'}`;
-    resumen += `\nFecha de afectación (GMT-5): ${fechaAfectacionStr}`;
-    resumen += `\n----------------------------------------`;
-    resumen += `\nTIEMPOS SLA (ACTUALIZADOS):`;
-    resumen += `\nTiempo en progreso: ${formatear(activeTime)}`;
-    resumen += `\nTiempo suspendido: ${formatear(suspendedTime)}`;
-    resumen += `\nTiempo total transcurrido: ${formatear(totalTime)}`;
-    resumen += `\n----------------------------------------`;
-    resumen += `\nRed Onnet: ${onnetEl.value || 'No especificado'}`;
-    resumen += `\nProveedor Offnet: ${offnetEl.value || 'No especificado'}`;
-    resumen += `\nPaís: ${paisEl.value || 'No especificado'}`;
-    resumen += `\n----------------------------------------`;
-    resumen += `\nINFORMACIÓN ADICIONAL:`;
-    resumen += `\ntickets secundarios: ${analisisTickets.total}`;
-    if (impactoEl.value.trim()) {
-        resumen += `\nImpacto: ${impactoEl.value}`;
-    }
-    resumen += `\n----------------------------------------`;
-
-    if (diagnosticoEl.value.trim()) {
-        resumen += `\nDIAGNÓSTICO INICIAL:`;
-        resumen += `\n${diagnosticoEl.value}`;
-
-    }
-    resumen += `\n----------------------------------------`;
 
     // ETR
     const noEtrCheck = document.getElementById('noEtrCheck');
@@ -1826,22 +1777,31 @@ function copiarResumen2() {
             etrTxt = `${horas}h ${minutos}m`;
         }
     }
-    resumen += `\nETR: ${etrTxt}`;
 
+    // Construir resumen con el formato solicitado
+    let resumen = `Ticket: ${ticketIdEl.value} | ${tramoEl.value || 'Sin tramo'}`;
+    resumen += `\nTramo: ${tramoEl.value || 'No especificado'}`;
+    resumen += `\nRed afectada: ${redAfectadaEl.value || 'No especificada'}`;
     resumen += `\n----------------------------------------`;
-
-    // AGREGAR ÚLTIMO AVANCE (SOLO EN RESUMEN 2)
+    resumen += `\nTiempo total transcurrido: ${formatear(totalTime)}`;
+    resumen += `\n----------------------------------------`;
+    resumen += `\nProveedor Offnet: ${offnetEl.value || 'No especificado'}`;
+    resumen += `\nPaís: ${paisEl.value || 'No especificado'}`;
+    resumen += `\n----------------------------------------`;
+    resumen += `\nINFORMACIÓN ADICIONAL:`;
+    resumen += `\ntickets secundarios: ${analisisTickets.total}`;
+    resumen += `\n----------------------------------------`;
+    resumen += `\nDIAGNÓSTICO INICIAL:`;
+    resumen += `\n${diagnosticoEl.value || 'Sin diagnóstico'}`;
+    resumen += `\n----------------------------------------`;
+    resumen += `\nETR: ${etrTxt}`;
+    resumen += `\n----------------------------------------`;
+    
     if (ultimoAvanceTexto) {
         resumen += `\nÚLTIMO AVANCE:`;
         resumen += `\n${ultimoAvanceTexto}`;
         resumen += `\n----------------------------------------`;
     }
-
-
-
-
-
-
 
     // Copiar al portapapeles
     navigator.clipboard.writeText(resumen).then(() => {
