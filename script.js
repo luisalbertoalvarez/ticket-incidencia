@@ -56,13 +56,13 @@ function mostrarNotificacionAlarma(ticketId, tipo) {
     if (Notification.permission === "granted") {
         const configuracion = {
             "4h30m": {
-                titulo: "⚠️ ALERTA SLA: 4 Horas 30 Minutos",
-                cuerpo: `El ticket ${ticketId} ha superado las 4h 30m de tiempo activo. ¡Revisar urgente!`,
+                titulo: "⚠️ ALERTA SLA: 4 Horas 50 Minutos",
+                cuerpo: `El ticket ${ticketId} ha superado las 4h 50m de tiempo activo. ¡Revisar urgente!`,
                 icono: "https://img.icons8.com/?size=100&id=YcN5CfB6FSvS&format=png&color=FF6B6B"
             },
             "5h30m": {
-                titulo: "🚨 ALERTA CRÍTICA SLA: 5 Horas 30 Minutos",
-                cuerpo: `El ticket ${ticketId} ha superado las 5h 30m de tiempo activo. ¡ACCIÓN INMEDIATA REQUERIDA!`,
+                titulo: "🚨 ALERTA CRÍTICA SLA: 5 Horas 50 Minutos",
+                cuerpo: `El ticket ${ticketId} ha superado las 5h 50m de tiempo activo. ¡ACCIÓN INMEDIATA REQUERIDA!`,
                 icono: "https://img.icons8.com/?size=100&id=YcN5CfB6FSvS&format=png&color=DC2626"
             }
         };
@@ -91,29 +91,29 @@ function verificarAlertaSLA(tiempoActivoMs, ticketId) {
     const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
     const ticketActual = tickets.find(t => t.id === ticketId);
     
-    const limite4h30m = 16200000; // 4h 30m en ms
-    const limite5h30m = 19800000; // 5h 30m en ms
+    const limite4h50m = 16200000; // 4h 50m en ms
+    const limite5h50m = 19800000; // 5h 50m en ms
     
-    // Alerta de 4h 30m
-    if (tiempoActivoMs >= limite4h30m && (!ticketActual || !ticketActual.alerta4h30mDisparada)) {
-        console.log(`⚠️ ALERTA: Ticket ${ticketId} superó 4h 30m.`);
-        mostrarNotificacionAlarma(ticketId, "4h30m");
-        mostrarToast(`⚠️ ALERTA SLA: ${ticketId} ha superado 4h 30m`, 'warning');
+    // Alerta de 4h 50m
+    if (tiempoActivoMs >= limite4h50m && (!ticketActual || !ticketActual.alerta4h50mDisparada)) {
+        console.log(`⚠️ ALERTA: Ticket ${ticketId} superó 4h 50m.`);
+        mostrarNotificacionAlarma(ticketId, "4h50m");
+        mostrarToast(`⚠️ ALERTA SLA: ${ticketId} ha superado 4h 50m`, 'warning');
         
         if (ticketActual) {
-            ticketActual.alerta4h30mDisparada = true;
+            ticketActual.alerta4h50mDisparada = true;
             localStorage.setItem('tickets', JSON.stringify(tickets));
         }
     }
     
-    // Alerta de 5h 30m
-    if (tiempoActivoMs >= limite5h30m && (!ticketActual || !ticketActual.alerta5h30mDisparada)) {
-        console.log(`🚨 ALERTA CRÍTICA: Ticket ${ticketId} superó 5h 30m.`);
-        mostrarNotificacionAlarma(ticketId, "5h30m");
-        mostrarToast(`🚨 ALERTA CRÍTICA: ${ticketId} ha superado 5h 30m`, 'error');
+    // Alerta de 5h 50m
+    if (tiempoActivoMs >= limite5h50m && (!ticketActual || !ticketActual.alerta5h50mDisparada)) {
+        console.log(`🚨 ALERTA CRÍTICA: Ticket ${ticketId} superó 5h 50m.`);
+        mostrarNotificacionAlarma(ticketId, "5h50m");
+        mostrarToast(`🚨 ALERTA CRÍTICA: ${ticketId} ha superado 5h 50m`, 'error');
         
         if (ticketActual) {
-            ticketActual.alerta5h30mDisparada = true;
+            ticketActual.alerta5h50mDisparada = true;
             localStorage.setItem('tickets', JSON.stringify(tickets));
         }
         
@@ -1906,6 +1906,92 @@ function copiarResumen2() {
     });
 }
 
+function copiarCronologia() {
+    const btn = document.querySelector('.copiar-cronologia-btn');
+    if (!btn) return;
+    const originalHTML = btn.innerHTML;
+    const originalClasses = btn.className;
+
+    const ticketIdEl = document.getElementById('ticketId');
+    const fechaAfectacion = obtenerFechaAfectacion();
+
+    if (!ticketIdEl.value.trim()) { mostrarToast('⚠️ Debe ingresar el ID del ticket', 'warning'); ticketIdEl.focus(); return; }
+    if (!fechaAfectacion) { mostrarToast('⚠️ Debe definir la "Fecha y hora de afectación"', 'warning'); document.getElementById('fechaAfectacion').focus(); return; }
+
+    const ahora = ticketResuelto ? fechaResolucion : new Date();
+    const { activeTime, suspendedTime, totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
+
+    const fechaAfectacionStr = fechaAfectacion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+    const fechaGeneracion = ahora.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+
+    let historialFormateado = '';
+    if (avancesArray.length === 0) {
+        historialFormateado = 'Sin avances registrados';
+    } else {
+        historialFormateado = avancesArray.map((avance, index) => {
+            const fechaStr = avance.timestamp.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+            let icono = '•';
+            if (avance.tipo === 'suspension') icono = '⏸️';
+            else if (avance.tipo === 'reanudacion') icono = '▶️';
+            else if (avance.tipo === 'resuelto') icono = '✅';
+            const indicadorEdicion = avance.editado ? ' ✏️' : '';
+            return `${index + 1}. ${icono} [${fechaStr}] ${avance.texto}${indicadorEdicion}`;
+        }).join('\n');
+    }
+
+    const ticketsSec = analizarTicketsSecundarios(document.getElementById('ticketSecundarios').value.trim());
+    const secTexto = ticketsSec.total > 0 ? ticketsSec.validos.map(t => `- ${t}`).join('\n') : 'Ninguno';
+
+    const textoCronologia = `📋 CRONOLOGÍA & SLA
+🎫 Ticket: ${ticketIdEl.value}
+🛤️ Tramo: ${document.getElementById('tramo').value || '-'}
+📅 Afectación: ${fechaAfectacionStr} (GMT-5)
+📊 Estado: ${ticketResuelto ? 'RESUELTO' : ticketSuspendido ? 'SUSPENDIDO' : 'EN PROGRESO'}
+${ticketResuelto ? `🏁 Resolución: ${fechaResolucion.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false })}` : ''}
+
+⏱️ TIEMPOS SLA:
+• Total transcurrido: ${formatear(totalTime)}
+• En progreso: ${formatear(activeTime)}
+• Suspendido: ${formatear(suspendedTime)}
+${ticketResuelto ? '* Tiempos congelados' : ''}
+
+📜 HISTORIAL:
+${historialFormateado}
+
+🔗 Tickets secundarios: ${ticketsSec.total}
+${secTexto}
+📅 Generado: ${fechaGeneracion} (GMT-5)`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textoCronologia).then(() => {
+            mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ Cronología copiada');
+        }).catch(err => {
+            console.warn('⚠️ Clipboard API falló, activando fallback:', err);
+            fallbackCopiarCronologia(textoCronologia, btn, originalHTML, originalClasses);
+        });
+    } else {
+        fallbackCopiarCronologia(textoCronologia, btn, originalHTML, originalClasses);
+    }
+}
+
+function fallbackCopiarCronologia(texto, btn, originalHTML, originalClasses) {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '-9999px'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        const ejecutado = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ejecutado) {
+            mostrarFeedbackExito(btn, originalHTML, originalClasses, '✅ Cronología copiada');
+        } else { throw new Error('execCommand retornó false'); }
+    } catch (e) {
+        console.error('❌ Error crítico al copiar:', e);
+        mostrarToast('❌ No se pudo copiar automáticamente. Seleccione el texto y presione Ctrl+C', 'error');
+        btn.innerHTML = originalHTML; btn.className = originalClasses;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     inicializarHostnamePuertos();
     cargarListaTickets();
@@ -2010,3 +2096,4 @@ SLA: ${sla}
         mostrarToast('❌ Error al copiar el cuadro de cierre', 'error');
     });
 }
+
