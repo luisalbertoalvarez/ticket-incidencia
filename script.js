@@ -790,7 +790,7 @@ ${ticketResuelto ? `🏁 Fecha de resolución (GMT-5): ${fechaResolucion.toLocal
 • Tiempo en progreso: ${formatear(activeTime)}
 • Tiempo suspendido: ${formatear(suspendedTime)}
 • Tiempo total transcurrido: ${formatear(totalTime)}
-${ticketResuelto ? '⚠️ TICKET RESUELTO ⚠️' : ''}
+${ticketResuelto ? '⚠️ EVENTO RESUELTO ⚠️' : ''}
 🔗 Red Onnet: ${onnetEl.value || '-'}
 🏢 Proveedor Offnet: ${offnetEl.value || '-'}
 🌍 País: ${paisEl.value || '-'}
