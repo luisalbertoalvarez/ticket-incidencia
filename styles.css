@@ -249,6 +249,14 @@ resize: vertical;
 font-family: 'Courier New', monospace;
 font-size: 0.95rem;
 }
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* espacio entre checkbox y texto */
+}
+textarea {
+  margin-bottom: 15px; /* ajusta el valor a tu gusto */
+}
 .form-section {
 margin-bottom: 1.5rem;
 padding-bottom: 1.5rem;
@@ -2144,3 +2152,6 @@ transform: none;
     text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
     animation: iconPulse 1s ease-in-out infinite;
 }
+
+
+
