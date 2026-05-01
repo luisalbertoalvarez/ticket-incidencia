@@ -2222,17 +2222,19 @@ function copiarCronologia() {
   );
 
   const textoCronologia = `
-  📋 CRONOLOGÍA & SLA\n
-  🎫 Ticket: ${ticketIdEl.value}\n
-  🛤️ Tramo: ${document.getElementById("tramo").value || "-"}\n
-  📅 Afectación: ${fechaAfectacionStr} (GMT-5)\n
-  📊 Estado: ${ticketResuelto ? "RESUELTO" : ticketSuspendido ? "SUSPENDIDO" : "EN PROGRESO"}\n${ticketResuelto ? `
-        🏁 Resolución: ${fechaResolucion.toLocaleString("es-EC", { timeZone: "America/Guayaquil", hour12: false })}` : ""}\n
-        ⏱️ TIEMPOS SLA:\n• Total transcurrido: ${formatear(totalTime)}\n
-        • En progreso: ${formatear(activeTime)}\n• Suspendido: ${formatear(suspendedTime)}\n${ticketResuelto ? "* Tiempos congelados" : ""}\n
-        📜 HISTORIAL:\n${historialFormateado}\n
-        📉 Tickets Caída Total: ${caidaCount}\n
-        📉 Tickets Fibra Oscura: ${fibraCount}\n
+  📋 CRONOLOGÍA
+  🎫 Ticket: ${ticketIdEl.value}
+  🛤️ Tramo: ${document.getElementById("tramo").value || "-"}
+  📅 Afectación: ${fechaAfectacionStr} (GMT-5)
+  📊 Estado: ${ticketResuelto ? "RESUELTO" : ticketSuspendido ? "SUSPENDIDO" : "EN PROGRESO"} ${ticketResuelto ? `
+        🏁 Resolución: ${fechaResolucion.toLocaleString("es-EC", { timeZone: "America/Guayaquil", hour12: false })}` : ""}
+        ⏱️ TIEMPOS:
+        • Total transcurrido: ${formatear(totalTime)}
+        • En progreso: ${formatear(activeTime)}
+        • Suspendido: ${formatear(suspendedTime)} ${ticketResuelto ? "* Tiempos congelados" : ""}
+        📜 HISTORIAL:${historialFormateado}
+        📉 Tickets Caída Total: ${caidaCount}
+        📉 Tickets Fibra Oscura: ${fibraCount}
         📅 Generado: ${fechaGeneracion} (GMT-5)`;
   navigator.clipboard
     .writeText(textoCronologia)
@@ -2322,7 +2324,19 @@ function cerrarCuadroCierre() {
 }
 function generarCuadroCierre() {
   const cuadroTexto =
-    `TT: ${document.getElementById("cierreTicketId").value} Tiempo total del ticket: ${document.getElementById("cierreTiempoTotal").value} Fecha de inicio: ${document.getElementById("cierreFechaInicio").value} Hora de inicio: ${document.getElementById("cierreHoraInicio").value} Fecha de final: ${document.getElementById("cierreFechaFinal").value} Hora de final: ${document.getElementById("cierreHoraFinal").value} Brigada: ${document.getElementById("cierreBrigada").value} Ámbito de la falla: ${document.getElementById("cierreAmbitoFall").value} Causa de la falla: ${document.getElementById("cierreCausaFall").value} Solución: ${document.getElementById("cierreSolucion").value} Razón de Tiempo no imputable: ${document.getElementById("cierreRazonTiempo").value} Coordenadas: ${document.getElementById("cierreCoordenadas").value} SLA: ${document.getElementById("cierreSLA").value}`.trim();
+    `TT: ${document.getElementById("cierreTicketId").value} 
+    Tiempo total del ticket: ${document.getElementById("cierreTiempoTotal").value} 
+    Fecha de inicio: ${document.getElementById("cierreFechaInicio").value} 
+    Hora de inicio: ${document.getElementById("cierreHoraInicio").value} 
+    Fecha de final: ${document.getElementById("cierreFechaFinal").value} 
+    Hora de final: ${document.getElementById("cierreHoraFinal").value} 
+    Brigada: ${document.getElementById("cierreBrigada").value} 
+    Ámbito de la falla: ${document.getElementById("cierreAmbitoFall").value} 
+    Causa de la falla: ${document.getElementById("cierreCausaFall").value} 
+    Solución: ${document.getElementById("cierreSolucion").value} 
+    Razón de Tiempo no imputable: ${document.getElementById("cierreRazonTiempo").value} 
+    Coordenadas: ${document.getElementById("cierreCoordenadas").value} 
+    SLA: ${document.getElementById("cierreSLA").value}`.trim();
   navigator.clipboard
     .writeText(cuadroTexto)
     .then(() => {
