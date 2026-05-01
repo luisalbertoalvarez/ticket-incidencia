@@ -13,13 +13,23 @@ let etrStartTime = null;
 let etrTotalMinutes = 0;
 let currentInputId = null;
 
-// 🔢 FUNCIÓN AUXILIAR: Cuenta tickets separados por saltos de línea, comas o punto y coma
-function contarTicketsEnCampo(texto) {
+// 🔢 FUNCIONES AUXILIARES: Conteo y Formateo de Tickets
+function contarTickets(texto) {
   if (!texto || !texto.trim()) return 0;
   return texto
     .split(/[\n,;]+/)
     .map((t) => t.trim())
     .filter((t) => t.length > 0).length;
+}
+function formatearTickets(texto, etiqueta) {
+  if (!texto || !texto.trim()) return "";
+  const tickets = texto
+    .split(/[\n,;]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  if (tickets.length === 0) return "";
+  const lista = tickets.map((t) => `  • ${t}`).join("\n");
+  return `📉 ${etiqueta}: [${tickets.length}]\n${lista}`;
 }
 
 const tiempoProgresoEl = document.getElementById("tiempoProgreso");
@@ -47,7 +57,7 @@ const reopenBtnEl = document.getElementById("reopenBtn");
 let estadoActual = 0;
 
 // ============================================
-// SISTEMA DE NOTIFICACIONES SLA (CORREGIDO)
+// SISTEMA DE NOTIFICACIONES SLA
 // ============================================
 function solicitarPermisosNotificacion() {
   if (!("Notification" in window)) {
@@ -66,14 +76,14 @@ function mostrarNotificacionAlarma(ticketId, tipo) {
   if (Notification.permission === "granted") {
     const configuracion = {
       "4h50m": {
-        titulo: "⚠️ ALERTA SLA: 4 Horas 55 Minutos",
-        cuerpo: `El ticket ${ticketId} ha superado las 4h 55m de tiempo activo. ¡LLAMAR A PATRICIO CAMPOVERDE!`,
+        titulo: "⚠️ ALERTA SLA: 4 Horas 50 Minutos",
+        cuerpo: `El ticket ${ticketId} ha superado las 4h 50m de tiempo activo. ¡Revisar urgente!`,
         icono:
           "https://img.icons8.com/?size=100&id=YcN5CfB6FSvS&format=png&color=FF6B6B",
       },
       "5h50m": {
-        titulo: "🚨 ALERTA CRÍTICA SLA: 5 Horas 55 Minutos",
-        cuerpo: `El ticket ${ticketId} ha superado las 5h 50m de tiempo activo. ¡LLAMAR A DIEGO Y ALEX!`,
+        titulo: "🚨 ALERTA CRÍTICA SLA: 5 Horas 50 Minutos",
+        cuerpo: `El ticket ${ticketId} ha superado las 5h 50m de tiempo activo. ¡ACCIÓN INMEDIATA REQUERIDA!`,
         icono:
           "https://img.icons8.com/?size=100&id=YcN5CfB6FSvS&format=png&color=DC2626",
       },
@@ -97,29 +107,29 @@ function verificarAlertaSLA(tiempoActivoMs, ticketId) {
   if (!ticketId) return;
   const tickets = JSON.parse(localStorage.getItem("tickets")) || [];
   const ticketActual = tickets.find((t) => t.id === ticketId);
-  const limite4h55 = 17700000;   // 4h 55m
-const limite5h55m = 21300000;  // 5h 55m
+  const limite4h50m = 16200000;
+  const limite5h50m = 19800000;
   if (
     tiempoActivoMs >= limite4h50m &&
-    (!ticketActual || !ticketActual.alerta4h55mDisparada)
+    (!ticketActual || !ticketActual.alerta4h30mDisparada)
   ) {
-    console.log(`⚠️ ALERTA: Ticket ${ticketId} superó 4h 55m.`);
-    mostrarNotificacionAlarma(ticketId, "4h55m");
-    mostrarToast(`⚠️ ALERTA SLA: ${ticketId} ha superado 4h 55m`, "warning");
+    console.log(`⚠️ ALERTA: Ticket ${ticketId} superó 4h 50m.`);
+    mostrarNotificacionAlarma(ticketId, "4h50m");
+    mostrarToast(`⚠️ ALERTA SLA: ${ticketId} ha superado 4h 50m`, "warning");
     if (ticketActual) {
-      ticketActual.alerta4h55mDisparada = true;
+      ticketActual.alerta4h30mDisparada = true;
       localStorage.setItem("tickets", JSON.stringify(tickets));
     }
   }
   if (
     tiempoActivoMs >= limite5h50m &&
-    (!ticketActual || !ticketActual.alerta5h55mDisparada)
+    (!ticketActual || !ticketActual.alerta5h30mDisparada)
   ) {
-    console.log(`🚨 ALERTA CRÍTICA: Ticket ${ticketId} superó 5h 55m.`);
+    console.log(`🚨 ALERTA CRÍTICA: Ticket ${ticketId} superó 5h 50m.`);
     mostrarNotificacionAlarma(ticketId, "5h50m");
-    mostrarToast(`🚨 ALERTA CRÍTICA: ${ticketId} ha superado 5h 55m`, "error");
+    mostrarToast(`🚨 ALERTA CRÍTICA: ${ticketId} ha superado 5h 50m`, "error");
     if (ticketActual) {
-      ticketActual.alerta5h55mDisparada = true;
+      ticketActual.alerta5h30mDisparada = true;
       localStorage.setItem("tickets", JSON.stringify(tickets));
     }
     activarEfectoAlertaCritica();
@@ -142,9 +152,6 @@ function activarEfectoAlertaCritica() {
   }
 }
 
-// ============================================
-// FIN DEL SISTEMA DE NOTIFICACIONES
-// ============================================
 // ============================================
 // NUEVA FUNCIÓN: CONTROL DE CAMPOS ESPECIALES
 // ============================================
@@ -232,12 +239,7 @@ function insertarFechaActual(inputId) {
   const ahora = new Date();
   const gmt5Timestamp = ahora.getTime() - 5 * 60 * 60 * 1000;
   const gmt5Date = new Date(gmt5Timestamp);
-  const fechaFormateada = `${gmt5Date.getUTCFullYear()}-${String(
-    gmt5Date.getUTCMonth() + 1,
-  ).padStart(
-    2,
-    "0",
-  )}-${String(gmt5Date.getUTCDate()).padStart(2, "0")} ${String(gmt5Date.getUTCHours()).padStart(2, "0")}:${String(gmt5Date.getUTCMinutes()).padStart(2, "0")}`;
+  const fechaFormateada = `${gmt5Date.getUTCFullYear()}-${String(gmt5Date.getUTCMonth() + 1).padStart(2, "0")}-${String(gmt5Date.getUTCDate()).padStart(2, "0")} ${String(gmt5Date.getUTCHours()).padStart(2, "0")}:${String(gmt5Date.getUTCMinutes()).padStart(2, "0")}`;
   document.getElementById(inputId).value = fechaFormateada;
   if (inputId === "fechaAfectacion") {
     validarFormatoFecha("fechaAfectacion");
@@ -258,7 +260,7 @@ function validarFormatoFecha(inputId) {
   if (!regex.test(valor)) {
     input.classList.add("input-format-error");
     mostrarToast(
-      `Formato inválido en ${inputId}. Use: AAAA-MM-DD HH:mm (ej: 2026-02-03 14:30)`,
+      `Formato inválido en ${inputId}. Use: AAAA-MM-DD HH:mm`,
       "error",
     );
     return false;
@@ -384,13 +386,7 @@ function renderizarHostnamePuertos() {
   if (!container) return;
   container.innerHTML = "";
   hostnamePuertoPairs.forEach((pair, index) => {
-    container.innerHTML += `<div class="hostname-puerto-pair" data-id="${pair.id}"><button type="button" 
-        class="btn-remove" onclick="eliminarCampoHostnamePuerto('${pair.id}')" title="Eliminar este equipo" 
-        ${hostnamePuertoPairs.length === 1 ? 'style="display:none;"' : ""}><i class="bi bi-x"></i></button><div 
-        class="hostname-puerto-label"><span class="pair-number-badge">#${index + 1}</span> 
-        Equipo afectado</div><div class="d-flex gap-2"><input type="text" class="form-control form-control-sm" 
-        placeholder="Hostname" value="${pair.hostname}" oninput="actualizarValorHostnamePuerto('${pair.id}', 'hostname', this.value)"><input type="text" 
-        class="form-control form-control-sm" placeholder="Puertos" value="${pair.puertos}" oninput="actualizarValorHostnamePuerto('${pair.id}', 'puertos', this.value)"></div></div>`;
+    container.innerHTML += `<div class="hostname-puerto-pair" data-id="${pair.id}"><button type="button" class="btn-remove" onclick="eliminarCampoHostnamePuerto('${pair.id}')" title="Eliminar este equipo" ${hostnamePuertoPairs.length === 1 ? 'style="display:none;"' : ""}><i class="bi bi-x"></i></button><div class="hostname-puerto-label"><span class="pair-number-badge">#${index + 1}</span> Equipo afectado</div><div class="d-flex gap-2"><input type="text" class="form-control form-control-sm" placeholder="Hostname" value="${pair.hostname}" oninput="actualizarValorHostnamePuerto('${pair.id}', 'hostname', this.value)"><input type="text" class="form-control form-control-sm" placeholder="Puertos" value="${pair.puertos}" oninput="actualizarValorHostnamePuerto('${pair.id}', 'puertos', this.value)"></div></div>`;
   });
 }
 function eliminarCampoHostnamePuerto(pairId) {
@@ -704,18 +700,13 @@ function renderizarAvances() {
       remitente = "Sistema";
     } else esEditable = true;
     const tieneEdicion = avance.editado
-      ? `<div class="avance-edited-indicator"><i class="bi bi-pencil-square"></i> Editado:
-         ${new Date(avance.editado).toLocaleString("es-EC", { timeZone: "America/Guayaquil", hour12: false, year: "2-digit", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>`
+      ? `<div class="avance-edited-indicator"><i class="bi bi-pencil-square"></i> Editado: ${new Date(avance.editado).toLocaleString("es-EC", { timeZone: "America/Guayaquil", hour12: false, year: "2-digit", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>`
       : "";
     const botonesAccion =
       esEditable && !ticketResuelto
-        ? `<div class="avance-actions"><button class="btn-edit-avance" 
-        title="Editar avance" onclick="iniciarEdicionAvance(${index})"><i class="bi bi-pencil"></i></button><button 
-        class="btn-delete-avance" title="Eliminar avance" onclick="eliminarAvance(${index})"><i class="bi bi-trash"></i></button></div>`
+        ? `<div class="avance-actions"><button class="btn-edit-avance" title="Editar avance" onclick="iniciarEdicionAvance(${index})"><i class="bi bi-pencil"></i></button><button class="btn-delete-avance" title="Eliminar avance" onclick="eliminarAvance(${index})"><i class="bi bi-trash"></i></button></div>`
         : "";
-    historialAvancesEl.innerHTML += `<div class="avance-entry ${claseCSS}" 
-        data-index="${index}"><div class="avance-time"><span>${fechaFormateada}</span><span>${remitente}</span></div><div class="avance-texto">
-        ${avance.texto.replace(/\n/g, "<br>")}</div>${tieneEdicion}${botonesAccion}</div>`;
+    historialAvancesEl.innerHTML += `<div class="avance-entry ${claseCSS}" data-index="${index}"><div class="avance-time"><span>${fechaFormateada}</span><span>${remitente}</span></div><div class="avance-texto">${avance.texto.replace(/\n/g, "<br>")}</div>${tieneEdicion}${botonesAccion}</div>`;
   });
   historialAvancesEl.scrollTop = historialAvancesEl.scrollHeight;
   nuevosAvancesBadgeEl.style.display = hayNuevosAvances
@@ -817,7 +808,7 @@ function eliminarAvance(index) {
   );
 }
 
-// 📋 PLANTILLAS ACTUALIZADAS (SIN SECUNDARIOS, CON CONTEO)
+// 📋 PLANTILLA PRINCIPAL ACTUALIZADA (CON LISTA DETALLADA DE TICKETS)
 function actualizarPlantilla() {
   const ticketIdEl = document.getElementById("ticketId");
   const tramoEl = document.getElementById("tramo");
@@ -830,12 +821,21 @@ function actualizarPlantilla() {
   const impactoEl = document.getElementById("impacto");
   const capacidadAfectadaEl = document.getElementById("capacidadAfectada");
   const noEtrCheck = document.getElementById("noEtrCheck");
-  const caidaTotalCount = contarTicketsEnCampo(
-    document.getElementById("ticketCaidaTotal").value,
-  );
-  const fibraOscuraCount = contarTicketsEnCampo(
-    document.getElementById("ticketFibraOscura").value,
-  );
+  const checkCaida = document.getElementById("checkCaidaTotal").checked;
+  const checkFibra = document.getElementById("checkFibraOscura").checked;
+
+  const caidaDisplay = checkCaida
+    ? formatearTickets(
+        document.getElementById("ticketCaidaTotal").value,
+        "Caída Total",
+      )
+    : "";
+  const fibraDisplay = checkFibra
+    ? formatearTickets(
+        document.getElementById("ticketFibraOscura").value,
+        "Fibra Oscura",
+      )
+    : "";
 
   let estadoTexto = "🟡 En Progreso ";
   if (ticketResuelto) estadoTexto = "✅ Resuelto ";
@@ -904,8 +904,8 @@ ${ticketResuelto ? "⚠️ EVENTO RESUELTO ⚠️" : ""}
 🏢 Proveedor Offnet: ${offnetEl.value || "-"}
 🌍 País: ${paisEl.value || "-"}
 📝 INFORMACIÓN ADICIONAL:
-• Tickets Caída Total: ${caidaTotalCount}
-• Tickets Fibra Oscura: ${fibraOscuraCount}
+${caidaDisplay}
+${fibraDisplay}
 • Impacto: ${impactoEl.value || "Sin impacto definido"}
 • Capacidad afectada: ${capacidadAfectadaEl.value || "No especificada"}
 🔍 DIAGNÓSTICO INICIAL: ${diagnosticoEl.value || "Sin diagnóstico"}
@@ -1206,7 +1206,7 @@ function calculateActiveAndSuspendedTime(incidentTime, avances, currentTime) {
   };
 }
 
-// 💾 GUARDAR / CARGAR / NUEVO
+// 💾 GUARDAR / CARGAR / NUEVO (SIN SECUNDARIOS)
 function guardarTicket() {
   const ticketIdEl = document.getElementById("ticketId");
   if (!ticketIdEl.value.trim())
@@ -1246,11 +1246,11 @@ function guardarTicket() {
   };
   let tks = JSON.parse(localStorage.getItem("tickets")) || [];
   const existente = tks.find((t) => t.id === ticket.id);
-  ticket.alerta4h55mDisparada = existente
-    ? existente.alerta4h55mDisparada
+  ticket.alerta4h30mDisparada = existente
+    ? existente.alerta4h30mDisparada
     : false;
   ticket.alerta5h30mDisparada = existente
-    ? existente.alerta5h55mDisparada
+    ? existente.alerta5h30mDisparada
     : false;
   tks = tks.filter((t) => t.id !== ticket.id);
   tks.push(ticket);
@@ -1824,8 +1824,8 @@ function importarTickets() {
           throw new Error("Archivo inválido");
         imported = imported.map((t) => ({
           ...t,
-          alerta4h55mDisparada: t.alerta4h55mDisparada || false,
-          alerta5h55mDisparada: t.alerta5h55mDisparada || false,
+          alerta4h30mDisparada: t.alerta4h30mDisparada || false,
+          alerta5h30mDisparada: t.alerta5h30mDisparada || false,
         }));
         const existing = JSON.parse(localStorage.getItem("tickets") || "[]");
         if (existing.length === 0) {
@@ -1920,10 +1920,12 @@ function generarCronologiaTXT() {
             return `${index + 1}. ${icono} [${fechaStr}] ${avance.texto}${avance.editado ? " ✏️" : ""}`;
           })
           .join("\n");
-  const caidaTotalCount = contarTicketsEnCampo(
+
+  // SOLO MUESTRA CONTADORES
+  const caidaCount = contarTickets(
     document.getElementById("ticketCaidaTotal").value,
   );
-  const fibraOscuraCount = contarTicketsEnCampo(
+  const fibraCount = contarTickets(
     document.getElementById("ticketFibraOscura").value,
   );
 
@@ -1939,8 +1941,8 @@ ${obtenerHostnamePuertosTexto()
 Fecha afectación   : ${fechaAfectacionStr} (GMT-5)
 Estado actual      : ${ticketResuelto ? "RESUELTO" : ticketSuspendido ? "SUSPENDIDO" : "EN PROGRESO"}
 ${ticketResuelto ? `Fecha resolución : ${fechaResolucion.toLocaleString("es-EC", { timeZone: "America/Guayaquil", hour12: false })} (GMT-5)` : ""}
-Tickets Caída Total: ${caidaTotalCount}
-Tickets Fibra Oscura: ${fibraOscuraCount}
+Tickets Caída Total: ${caidaCount}
+Tickets Fibra Oscura: ${fibraCount}
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ TIEMPOS SLA CALCULADOS DESDE LA FECHA DE AFECTACIÓN
 ├──────────────────────────────────────────────────────────────────────────────┤
@@ -2020,34 +2022,19 @@ function copiarResumen1() {
   const ahora = ticketResuelto ? fechaResolucion : new Date();
   const { activeTime, suspendedTime, totalTime } =
     calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
-  const caidaTotalCount = contarTicketsEnCampo(
+  const caidaTotalCount = contarTickets(
     document.getElementById("ticketCaidaTotal").value,
   );
-  const fibraOscuraCount = contarTicketsEnCampo(
+  const fibraOscuraCount = contarTickets(
     document.getElementById("ticketFibraOscura").value,
   );
 
-  let resumen = `Ticket: ${ticketIdEl.value}\n
-  Estado: ${estadoTexto}\n
-  Tramo: ${document.getElementById("tramo").value || "No especificado"}\n
-  Red afectada: ${document.getElementById("redAfectada").value || "No especificada"}\n
-  Fecha de afectación (GMT-5): ${fechaAfectacionStr}`;
+  let resumen = `Ticket: ${ticketIdEl.value}\nEstado: ${estadoTexto}\nTramo: ${document.getElementById("tramo").value || "No especificado"}\nRed afectada: ${document.getElementById("redAfectada").value || "No especificada"}\nFecha de afectación (GMT-5): ${fechaAfectacionStr}`;
   if (fechaResolucionStr)
     resumen += `\nFecha de resolución (GMT-5): ${fechaResolucionStr}`;
-  resumen += `\n----------------------------------------\n
-  TIEMPOS SLA (ACTUALIZADOS):\n
-  Tiempo en progreso: ${formatear(activeTime)}\n
-  Tiempo suspendido: ${formatear(suspendedTime)}\n
-  Tiempo total transcurrido: ${formatear(totalTime)}`;
+  resumen += `\n----------------------------------------\nTIEMPOS SLA (ACTUALIZADOS):\nTiempo en progreso: ${formatear(activeTime)}\nTiempo suspendido: ${formatear(suspendedTime)}\nTiempo total transcurrido: ${formatear(totalTime)}`;
   if (ticketResuelto) resumen += `\n⚠️ EVENTO RESUELTO ⚠️`;
-  resumen += `\n----------------------------------------\n
-  Red Onnet: ${document.getElementById("onnet").value || "No especificado"}\n
-  Proveedor Offnet: ${document.getElementById("offnet").value || "No especificado"}\n
-  País: ${document.getElementById("pais").value || "No especificado"}
-  \n----------------------------------------\n
-  INFORMACIÓN ADICIONAL:\n
-  • Tickets Caída Total: ${caidaTotalCount}\n
-  • Tickets Fibra Oscura: ${fibraOscuraCount}`;
+  resumen += `\n----------------------------------------\nRed Onnet: ${document.getElementById("onnet").value || "No especificado"}\nProveedor Offnet: ${document.getElementById("offnet").value || "No especificado"}\nPaís: ${document.getElementById("pais").value || "No especificado"}\n----------------------------------------\nINFORMACIÓN ADICIONAL:\n• Tickets Caída Total: ${caidaTotalCount}\n• Tickets Fibra Oscura: ${fibraOscuraCount}`;
   navigator.clipboard
     .writeText(resumen)
     .then(() =>
@@ -2075,7 +2062,6 @@ function copiarResumen2() {
   if (!fechaAfectacion)
     return mostrarToast("⚠️ Defina fecha de afectación", "warning");
   actualizarPlantilla();
-
   const ahora = ticketResuelto ? fechaResolucion : new Date();
   const { activeTime, suspendedTime, totalTime } =
     calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
@@ -2099,28 +2085,21 @@ function copiarResumen2() {
     etrOriginalTexto = "Sin ETR definido";
     etrRestanteTexto = "N/A";
   }
-
-  const caidaTotalCount = contarTicketsEnCampo(
+  const caidaTotalCount = contarTickets(
     document.getElementById("ticketCaidaTotal").value,
   );
-  const fibraOscuraCount = contarTicketsEnCampo(
+  const fibraOscuraCount = contarTickets(
     document.getElementById("ticketFibraOscura").value,
   );
-  let estadoTexto = ticketResuelto
-    ? "Resuelto"
-    : ticketSuspendido
-      ? "Suspendido"
-      : "En Progreso";
 
-  // 🔍 NUEVO: Obtener último avance CON SU HORA DE REGISTRO
-  let ultimoAvanceTexto = null;
-  let horaUltimoAvance = "";
+  // OBTENER HORA DEL ÚLTIMO AVANCE
+  let ultimoAvanceTexto = null,
+    horaUltimoAvance = "";
   if (avancesArray.length > 0) {
     const ordenados = [...avancesArray].sort(
       (a, b) => b.timestamp - a.timestamp,
     );
     let ultimo = ordenados[0];
-    // Ignorar eventos automáticos para mostrar solo el último comentario técnico
     if (
       ["suspension", "reanudacion", "resuelto", "sistema"].includes(ultimo.tipo)
     ) {
@@ -2143,28 +2122,30 @@ function copiarResumen2() {
     }
   }
 
-  let resumen = `
-  📋 TICKET DE INCIDENCIA 
-  🎫 Ticket: ${ticketIdEl.value}
-  📊 Estado: ${estadoTexto}
-  🛤️ Tramo: ${document.getElementById("tramo").value || "No especificado"}
+  let estadoTexto = ticketResuelto
+    ? "Resuelto"
+    : ticketSuspendido
+      ? "Suspendido"
+      : "En Progreso";
+  let resumen = `📋 TICKET DE INCIDENCIA -
+  🎫 Ticket: ${ticketIdEl.value}\n
+  📊 Estado: ${estadoTexto}\n
+  🛤️ Tramo: ${document.getElementById("tramo").value || "No especificado"}\
   🌐 Red afectada: ${document.getElementById("redAfectada").value || "No especificada"}
-  ⏱️ TIEMPOS: ${formatear(totalTime)}
+  ⏱️ TIEMPOS:\n• Tiempo total: ${formatear(totalTime)}
   🏢 Proveedor Offnet: ${document.getElementById("offnet").value || "No especificado"}
   🌍 País: ${document.getElementById("pais").value || "No especificado"}
-  📝 INFORMACIÓN ADICIONAL:
-  • Tickets Caída Total: ${caidaTotalCount}
+  📝 INFORMACIÓN ADICIONAL:\n• Tickets Caída Total: ${caidaTotalCount}
   • Tickets Fibra Oscura: ${fibraOscuraCount}
   • Diagnóstico: ${document.getElementById("diagnostico").value || "Sin diagnóstico"}
   ⏰ ETR ESTIMADO:
   • ETR Configurado: ${etrOriginalTexto}
   • Tiempo restante: ${etrRestanteTexto}`;
   if (ultimoAvanceTexto) {
-    resumen += `\n💬 ÚLTIMO AVANCE [${horaUltimoAvance}]:`;
-    resumen += `\n${ultimoAvanceTexto}`;
-     resumen += `\n👤 CTO: @`;
-  }
-   navigator.clipboard
+    resumen += `
+    💬 ÚLTIMO AVANCE [${horaUltimoAvance}]:\n${ultimoAvanceTexto}`;
+  };
+  navigator.clipboard
     .writeText(resumen)
     .then(() =>
       mostrarFeedbackExito(
@@ -2233,10 +2214,10 @@ function copiarCronologia() {
             return `${index + 1}. ${icono} [${fechaStr}] ${avance.texto}${avance.editado ? " ✏️" : ""}`;
           })
           .join("\n");
-  const caidaTotalCount = contarTicketsEnCampo(
+  const caidaCount = contarTickets(
     document.getElementById("ticketCaidaTotal").value,
   );
-  const fibraOscuraCount = contarTicketsEnCampo(
+  const fibraCount = contarTickets(
     document.getElementById("ticketFibraOscura").value,
   );
 
@@ -2245,20 +2226,14 @@ function copiarCronologia() {
   🎫 Ticket: ${ticketIdEl.value}\n
   🛤️ Tramo: ${document.getElementById("tramo").value || "-"}\n
   📅 Afectación: ${fechaAfectacionStr} (GMT-5)\n
-  📊 Estado: ${ticketResuelto ? "RESUELTO" : ticketSuspendido ? "SUSPENDIDO" : "EN PROGRESO"}\n${
-    ticketResuelto
-      ? `
-    🏁 Resolución: ${fechaResolucion.toLocaleString("es-EC", { timeZone: "America/Guayaquil", hour12: false })}`
-      : ""
-  }\n
-    ⏱️ TIEMPOS SLA:\n
-    • Total transcurrido: ${formatear(totalTime)}\n
-    • En progreso: ${formatear(activeTime)}\n
-    • Suspendido: ${formatear(suspendedTime)}\n${ticketResuelto ? "* Tiempos congelados" : ""}\n
-    📜 HISTORIAL:\n${historialFormateado}\n
-    📉 Tickets Caída Total: ${caidaTotalCount}\n
-    📉 Tickets Fibra Oscura: ${fibraOscuraCount}\n
-    📅 Generado: ${fechaGeneracion} (GMT-5)`;
+  📊 Estado: ${ticketResuelto ? "RESUELTO" : ticketSuspendido ? "SUSPENDIDO" : "EN PROGRESO"}\n${ticketResuelto ? `
+        🏁 Resolución: ${fechaResolucion.toLocaleString("es-EC", { timeZone: "America/Guayaquil", hour12: false })}` : ""}\n
+        ⏱️ TIEMPOS SLA:\n• Total transcurrido: ${formatear(totalTime)}\n
+        • En progreso: ${formatear(activeTime)}\n• Suspendido: ${formatear(suspendedTime)}\n${ticketResuelto ? "* Tiempos congelados" : ""}\n
+        📜 HISTORIAL:\n${historialFormateado}\n
+        📉 Tickets Caída Total: ${caidaCount}\n
+        📉 Tickets Fibra Oscura: ${fibraCount}\n
+        📅 Generado: ${fechaGeneracion} (GMT-5)`;
   navigator.clipboard
     .writeText(textoCronologia)
     .then(() =>
