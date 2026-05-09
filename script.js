@@ -2052,109 +2052,71 @@ function copiarResumen1() {
     });
 }
 function copiarResumen2() {
-  const btn = document.querySelector(".btn-resumen-2");
-  const originalHTML = btn.innerHTML,
-    originalClasses = btn.className;
-  const ticketIdEl = document.getElementById("ticketId");
-  if (!ticketIdEl.value.trim())
-    return mostrarToast("⚠️ Ingrese ID del ticket", "warning");
-  const fechaAfectacion = obtenerFechaAfectacion();
-  if (!fechaAfectacion)
-    return mostrarToast("⚠️ Defina fecha de afectación", "warning");
-  actualizarPlantilla();
-  const ahora = ticketResuelto ? fechaResolucion : new Date();
-  const { activeTime, suspendedTime, totalTime } =
-    calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
-  const etrHoras = parseInt(document.getElementById("etrHoras").value) || 0,
-    etrMinutos = parseInt(document.getElementById("etrMinutos").value) || 0;
-  let etrOriginalTexto = "No definido",
-    etrRestanteTexto = "No definido";
-  if (
-    !document.getElementById("noEtrCheck").checked &&
-    (etrHoras > 0 || etrMinutos > 0)
-  ) {
-    etrOriginalTexto = `${etrHoras}h ${etrMinutos}m`;
-    if (etrTotalMinutes > 0 && etrStartTime) {
-      const remaining = Math.max(
-        0,
-        etrTotalMinutes - (Date.now() - etrStartTime) / (1000 * 60),
-      );
-      etrRestanteTexto = `${String(Math.floor(remaining / 3600)).padStart(2, "0")}:${String(Math.floor((remaining % 3600) / 60)).padStart(2, "0")}:${String(Math.floor(remaining % 60)).padStart(2, "0")} (Restante)`;
-    } else etrRestanteTexto = `--:--:-- (Estimado)`;
-  } else if (document.getElementById("noEtrCheck").checked) {
-    etrOriginalTexto = "Sin ETR definido";
-    etrRestanteTexto = "N/A";
-  }
-  const caidaTotalCount = contarTickets(
-    document.getElementById("ticketCaidaTotal").value,
-  );
-  const fibraOscuraCount = contarTickets(
-    document.getElementById("ticketFibraOscura").value,
-  );
+    const btn = document.querySelector(".btn-resumen-2");
+    const originalHTML = btn.innerHTML, originalClasses = btn.className;
+    const ticketIdEl = document.getElementById("ticketId");
+    if (!ticketIdEl.value.trim()) return mostrarToast("Ingrese ID del ticket", "warning");
 
-  // OBTENER HORA DEL ÚLTIMO AVANCE
-  let ultimoAvanceTexto = null,
-    horaUltimoAvance = "";
-  if (avancesArray.length > 0) {
-    const ordenados = [...avancesArray].sort(
-      (a, b) => b.timestamp - a.timestamp,
-    );
-    let ultimo = ordenados[0];
-    if (
-      ["suspension", "reanudacion", "resuelto", "sistema"].includes(ultimo.tipo)
-    ) {
-      const op = ordenados.find(
-        (av) => av.tipo === "normal" || av.tipo === undefined,
-      );
-      if (op) ultimo = op;
-      else ultimo = null;
-    }
-    if (ultimo) {
-      horaUltimoAvance = ultimo.timestamp.toLocaleString("es-EC", {
-        timeZone: "America/Guayaquil",
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      ultimoAvanceTexto = ultimo.texto;
-    }
-  }
+    const fechaAfectacion = obtenerFechaAfectacion();
+    if (!fechaAfectacion) return mostrarToast("Defina fecha de afectación", "warning");
 
-  let estadoTexto = ticketResuelto
-    ? "Resuelto"
-    : ticketSuspendido
-      ? "Suspendido"
-      : "En Progreso";
-  let resumen = `📋 TICKET DE INCIDENCIA -
-  🎫 Ticket: ${ticketIdEl.value}\n
-  📊 Estado: ${estadoTexto}\n
-  🛤️ Tramo: ${document.getElementById("tramo").value || "No especificado"}\
-  🌐 Red afectada: ${document.getElementById("redAfectada").value || "No especificada"}
-  ⏱️ TIEMPOS:\n• Tiempo total: ${formatear(totalTime)}
-  🏢 Proveedor Offnet: ${document.getElementById("offnet").value || "No especificado"}
-  🌍 País: ${document.getElementById("pais").value || "No especificado"}
-  📝 INFORMACIÓN ADICIONAL:\n• Tickets Caída Total: ${caidaTotalCount}
-  • Tickets Fibra Oscura: ${fibraOscuraCount}
-  • Diagnóstico: ${document.getElementById("diagnostico").value || "Sin diagnóstico"}
-  ⏰ ETR ESTIMADO:
-  • ETR Configurado: ${etrOriginalTexto}
-  • Tiempo restante: ${etrRestanteTexto}`;
-  if (ultimoAvanceTexto) {
-    resumen += `
-    💬 ÚLTIMO AVANCE [${horaUltimoAvance}]:\n${ultimoAvanceTexto}`;
-  };
-  navigator.clipboard
-    .writeText(resumen)
-    .then(() =>
-      mostrarFeedbackExito(
-        btn,
-        originalHTML,
-        originalClasses,
-        "✅ ¡Resumen 5H Copiado!",
-      ),
-    )
+    actualizarPlantilla();
+    const ahora = ticketResuelto ? fechaResolucion : new Date();
+    const { totalTime } = calculateActiveAndSuspendedTime(fechaAfectacion, avancesArray, ahora);
+
+    // Lógica ETR
+    const etrHoras = parseInt(document.getElementById("etrHoras").value) || 0;
+    const etrMinutos = parseInt(document.getElementById("etrMinutos").value) || 0;
+    let etrTexto = "Sin ETR definido";
+    if (!document.getElementById("noEtrCheck").checked && (etrHoras > 0 || etrMinutos > 0)) {
+        etrTexto = `${etrHoras}h ${etrMinutos}m`;
+    }
+
+    // Suma de tickets secundarios (Caída Total + Fibra Oscura)
+    const caidaTotalCount = contarTickets(document.getElementById("ticketCaidaTotal").value);
+    const fibraOscuraCount = contarTickets(document.getElementById("ticketFibraOscura").value);
+    const totalSecundarios = caidaTotalCount + fibraOscuraCount;
+
+    // Obtener último avance relevante (ignora suspensiones/reanudaciones automáticas)
+    let ultimoAvanceTexto = "";
+    if (avancesArray.length > 0) {
+        const ordenados = [...avancesArray].sort((a, b) => b.timestamp - a.timestamp);
+        let ultimo = ordenados[0];
+        if (["suspension", "reanudacion", "resuelto", "sistema"].includes(ultimo.tipo)) {
+            const op = ordenados.find(av => av.tipo === "normal" || av.tipo === undefined);
+            if (op) ultimo = op;
+            else ultimo = null;
+        }
+        if (ultimo) ultimoAvanceTexto = ultimo.texto;
+    }
+
+    // Saludo según hora del computador
+    const horaActual = new Date().getHours();
+    let saludo = "Buenos días";
+    if (horaActual >= 12 && horaActual < 18) saludo = "Buenas tardes";
+    else if (horaActual >= 18) saludo = "Buenas noches";
+
+    // Construcción exacta del formato solicitado (sin iconos ni caracteres especiales extra)
+    let resumen = `${saludo}\n`;
+    resumen += `Ticket: ${ticketIdEl.value.trim()}\n`;
+    resumen += `Tramo: ${document.getElementById("tramo").value.trim() || "-"}\n`;
+    resumen += `Red afectada: ${document.getElementById("redAfectada").value.trim() || "-"}\n`;
+    resumen += `Tiempo total: ${formatear(totalTime)}\n`;
+    resumen += `Proveedor Offnet: ${document.getElementById("offnet").value.trim() || "-"}\n`;
+    resumen += `País: ${document.getElementById("pais").value.trim() || "-"}\n`;
+    resumen += `Tickets secundarios: ${totalSecundarios}\n`;
+    resumen += `ETR ESTIMADO: ${etrTexto}\n`;
+    resumen += `Diagnóstico: ${document.getElementById("diagnostico").value.trim() || "-"}\n`;
+    resumen += `ÚLTIMO AVANCE\n${ultimoAvanceTexto || "Sin avances registrados"}`;
+
+    navigator.clipboard.writeText(resumen).then(() =>
+        mostrarFeedbackExito(btn, originalHTML, originalClasses, "✅ ¡Resumen 5H Copiado! ")
+    ).catch(() => {
+        mostrarToast("Error al copiar", "error");
+        btn.innerHTML = originalHTML;
+        btn.className = originalClasses;
+    }
+  )
     .catch(() => {
       mostrarToast("❌ Error al copiar", "error");
       btn.innerHTML = originalHTML;
