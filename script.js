@@ -2097,17 +2097,18 @@ function copiarResumen2() {
     else if (horaActual >= 18) saludo = "Buenas noches";
 
     // Construcción exacta del formato solicitado (sin iconos ni caracteres especiales extra)
-    let resumen = `${saludo}\n`;
+    let resumen = `${saludo}\n\n`;
     resumen += `Ticket: ${ticketIdEl.value.trim()}\n`;
     resumen += `Tramo: ${document.getElementById("tramo").value.trim() || "-"}\n`;
     resumen += `Red afectada: ${document.getElementById("redAfectada").value.trim() || "-"}\n`;
     resumen += `Tiempo total: ${formatear(totalTime)}\n`;
-    resumen += `Proveedor Offnet: ${document.getElementById("offnet").value.trim() || "-"}\n`;
+    resumen += `Proveedor: ${document.getElementById("offnet").value.trim() || "-"}\n`;
     resumen += `País: ${document.getElementById("pais").value.trim() || "-"}\n`;
     resumen += `Tickets secundarios: ${totalSecundarios}\n`;
     resumen += `ETR ESTIMADO: ${etrTexto}\n`;
     resumen += `Diagnóstico: ${document.getElementById("diagnostico").value.trim() || "-"}\n`;
-    resumen += `ÚLTIMO AVANCE\n${ultimoAvanceTexto || "Sin avances registrados"}`;
+    resumen += `ÚLTIMO AVANCE DE LA REPARACION:\n${ultimoAvanceTexto || "Sin avances registrados"}`;
+    resumen += `\nCTO: @`;
 
     navigator.clipboard.writeText(resumen).then(() =>
         mostrarFeedbackExito(btn, originalHTML, originalClasses, "✅ ¡Resumen 5H Copiado! ")
