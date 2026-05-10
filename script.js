@@ -2105,9 +2105,9 @@ function copiarResumen2() {
     resumen += `Proveedor: ${document.getElementById("offnet").value.trim() || "-"}\n`;
     resumen += `País: ${document.getElementById("pais").value.trim() || "-"}\n`;
     resumen += `Tickets secundarios: ${totalSecundarios}\n`;
-    resumen += `ETR ESTIMADO: ${etrTexto}\n`;
+    resumen += `ETR estimado: ${etrTexto}\n`;
     resumen += `Diagnóstico: ${document.getElementById("diagnostico").value.trim() || "-"}\n`;
-    resumen += `ÚLTIMO AVANCE DE LA REPARACION:\n${ultimoAvanceTexto || "Sin avances registrados"}`;
+    resumen += `Último avances de la reparación:\n${ultimoAvanceTexto || "Sin avances registrados"}`;
     resumen += `\nCTO: @`;
 
     navigator.clipboard.writeText(resumen).then(() =>
